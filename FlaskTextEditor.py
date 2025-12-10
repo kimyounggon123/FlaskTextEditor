@@ -9,8 +9,7 @@ import os
 app = Flask(__name__) 
 
 # GrammarManager 인스턴스 생성 
-api_key = os.getenv("OPENAI_API_KEY")
-grammar = GrammarManager(api_key=api_key)
+grammar = GrammarManager('auto')
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -18,17 +17,21 @@ def editor():
     content = ""
 
     if request.method == "POST":
+        # 버튼 값 확인
         action = request.form.get("action")
         content = request.form.get("editor")
 
         if action == "save":
-            print("💾 Save pressed!")
+            print("Save pressed!")
             return render_template("textEditor.html", content=content)
 
         elif action == "grammar":
-            print("📝 Grammar check pressed!")
-            corrected = grammar.check(content, "basic", "kr")
+            print("Grammar check pressed!")
+            corrected = grammar.check(content)
             return render_template("textEditor.html", content=corrected)
+        
+        else:
+            return jsonify({"error": "잘못된 값을 전송"}), 500
 
     return render_template("textEditor.html", content=content)
 
@@ -36,12 +39,15 @@ def editor():
 @app.route("/check", methods=["POST"])
 def check():
     data = request.json
-    text = data.get("text", "")
-    level = data.get("level", "basic")
-    lang = data.get("lang", "kr")
-
-    corrected = grammar.check(text, level, lang)
-    return jsonify({"corrected": corrected})
+    if "text" not in data:
+        return jsonify({"error": "no text field"})
+    
+    try:
+        corrected = grammar.check(data["text"])
+        return jsonify({"corrected": corrected})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host = "localhost", port= 1000, debug=True)

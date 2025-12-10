@@ -1,8 +1,39 @@
+import language_tool_python
+from langdetect import detect
+
 from openai import OpenAI
 
 
-# ------------------- 문법 교정 파트 ---------------------
+
 class GrammarManager:
+    def __init__(self, type: str = 'auto'):
+        self.tool = language_tool_python.LanguageTool(type)
+
+
+    def check(self, text):
+        matches = self.tool.check(text)
+        corrected = language_tool_python.utils.correct(text, matches)
+
+        errors = [] # 틀린 이유 수집
+        for m in matches:
+            errors.append({
+                "rule": m.rule_id,
+                "message": m.message,
+                "suggestions": m.replacements,
+                "offset": m.offset,
+                "length": m.error_length,
+                "context": m.context
+                }
+            )
+
+        return corrected, errors
+
+
+    def fixText(self, text):
+        return self.check(text)
+    
+# ------------------- 문법 교정 파트 ---------------------
+class GrammarManagerOpenAI:
     def __init__(self, api_key, model = "gpt-4.1-mini"):
         self.client = OpenAI(api_key=api_key)
         self.model = model
@@ -38,3 +69,5 @@ class GrammarManager:
             return f"Could you fix the grammar of the following text? you must not change the meaning or rewrite unnecessarily. \n\n {text}"
         else:
             return f"Could you rewrite this naturally? \n\n {text}"
+        
+
