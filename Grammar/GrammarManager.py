@@ -4,7 +4,8 @@ from langdetect import detect
 from openai import OpenAI
 
 
-
+    
+# ------------------- 문법 교정 파트 ---------------------
 class GrammarManager:
     def __init__(self, type: str = 'auto'):
         self.tool = language_tool_python.LanguageTool(type)
@@ -32,7 +33,8 @@ class GrammarManager:
     def fixText(self, text):
         return self.check(text)
     
-# ------------------- 문법 교정 파트 ---------------------
+    
+# OpenAI 버전. 해당 과제에서는 사용하지 않음.
 class GrammarManagerOpenAI:
     def __init__(self, api_key, model = "gpt-4.1-mini"):
         self.client = OpenAI(api_key=api_key)

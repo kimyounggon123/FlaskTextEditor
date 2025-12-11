@@ -26,21 +26,46 @@
 
 <h2>Flask Text Editor</h2>
 
-<form method="POST">
-    <textarea name="editor">{{ content }}</textarea>
+<form id="editorForm" method="POST">
+    <textarea id="editor" name="editor">{{ content }}</textarea>
     <br>
-    <!-- 저장 버튼 -->
+
+    <!-- 저장 버튼 (기존 form-submit 유지) -->
     <button type="submit" name="action" value="save">저장</button>
-    <!-- 문법 검사 버튼 -->
-    <button type="submit" name="action" value="grammar">문법 검사</button>
+
+    <!-- 문법 검사 버튼 (Ajax로 변경) -->
+    <button type="button" id="grammarBtn">문법 검사</button>
 </form>
 
-
 <script>
+document.getElementById("grammarBtn").addEventListener("click", function () {
+    const text = document.getElementById("editor").value;
 
-
+    fetch("/check", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            text: text,
+            level: "basic",
+            lang: "kr"
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert("서버 오류: " + data.error);
+            return;
+        }
+        // 문법 교정된 텍스트를 textarea에 적용
+        document.getElementById("editor").value = data.corrected;
+    })
+    .catch(err => {
+        alert("요청 실패: " + err);
+    });
+});
 </script>
-
 
 </body>
 </html>

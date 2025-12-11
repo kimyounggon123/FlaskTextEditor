@@ -38,11 +38,15 @@ def editor():
 
 @app.route("/check", methods=["POST"])
 def check():
-    data = request.json
-    if "text" not in data:
-        return jsonify({"error": "no text field"})
-    
     try:
+        data = request.json
+        text = data.get("text", "")
+        level = data.get("level", "basic")
+        lang = data.get("lang", "kr")
+        
+        if "text" not in data:
+            return jsonify({"error": "no text field"})
+    
         corrected = grammar.check(data["text"])
         return jsonify({"corrected": corrected})
     
