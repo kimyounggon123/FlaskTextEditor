@@ -9,7 +9,7 @@ import os
 app = Flask(__name__) 
 
 # GrammarManager 인스턴스 생성 
-grammar = GrammarManager('auto')
+grammar = GrammarManager('en-US')
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -24,11 +24,6 @@ def editor():
         if action == "save":
             print("Save pressed!")
             return render_template("textEditor.html", content=content)
-
-        elif action == "grammar":
-            print("Grammar check pressed!")
-            corrected = grammar.check(content)
-            return render_template("textEditor.html", content=corrected)
         
         else:
             return jsonify({"error": "잘못된 값을 전송"}), 500
@@ -48,6 +43,7 @@ def check():
             return jsonify({"error": "no text field"})
     
         corrected = grammar.check(data["text"])
+        print(corrected)
         return jsonify({"corrected": corrected})
     
     except Exception as e:

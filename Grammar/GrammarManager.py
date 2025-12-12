@@ -7,7 +7,7 @@ from openai import OpenAI
     
 # ------------------- 문법 교정 파트 ---------------------
 class GrammarManager:
-    def __init__(self, type: str = 'auto'):
+    def __init__(self, type: str = 'en-US'):
         self.tool = language_tool_python.LanguageTool(type)
 
 
