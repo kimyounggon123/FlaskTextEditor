@@ -2,10 +2,15 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Simple Text Editor</title>
+    <title>Text Editor with Grammar checker</title>
     <!-- This is a comment --> 
     <style>
-        body { margin: 40px; font-family: sans-serif; }   /* 텍스트 스타일 */
+        body {
+            margin: 40px;
+            font-family: sans-serif;
+            background: #ffffff;
+            color: #000000;
+        }
         textarea 
         {
             width: 100%;
@@ -13,18 +18,103 @@
             font-size: 16px;
             padding: 12px;
         }
-        button /*save button*/
-        {
+        button {
             padding: 10px 20px;
             font-size: 16px;
             margin-top: 10px;
+
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: #f0f0f0;
+
+            cursor: pointer;
         }
+        button:hover {
+            background: #e6e6e6;
+        }
+        /* 문법 오류 표시 영역 */
+        #errorBox {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+
+        #errorBox h3 {
+            margin-top: 0;
+        }
+
+        .error-item {
+            color: red;
+            cursor: pointer;
+        }
+        .error-item.active {
+            background: rgba(255, 0, 0, 0.15);
+            border-left: 4px solid red;
+        }
+        .no-error {
+            color: green;
+        }
+
+        #statusBar {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        #checkStatus.loading {
+            color: #d97706; /* 주황 */
+        }
+
+        #checkStatus.done {
+            color: #16a34a; /* 초록 */
+        }
+
+        /* 다크모드 */
+        body.dark {
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        body.dark button {
+            background: #333;
+            color: #eee;
+            border: 1px solid #555;
+        }
+        body.dark button:hover {
+            background: #4a4a4a;
+        }
+        body.dark textarea {
+            background: #2b2b2b;
+            color: #f5f5f5;
+            border: 1px solid #555;
+        }
+        body.dark #statusBar {
+            color: #aaa;
+        }
+        body.dark #errorBox {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #555;
+            background: #2b2b2b;
+            color: #f5f5f5;
+        }
+
+        body.dark .error-item {
+            color: #ff6b6b;
+        }
+        body.dark .error-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid #ff6b6b;
+        }
+        body.dark .no-error {
+            color: #7CFC98;
+        }
+
     </style>
-    <!-- This is a comment -->
 </head>
 <body>
 
-<h2>Flask Text Editor</h2>
+<h2>Text Editor with Grammar checker</h2>
 
 <form id="editorForm" method="POST">
     <textarea id="editor" name="editor">{{ content }}</textarea>
@@ -35,12 +125,41 @@
 
     <!-- 문법 검사 버튼 (Ajax로 변경) -->
     <button type="button" id="grammarBtn">문법 검사</button>
+
+    <button type="button" id="fontMinus">문자-</button>
+    <button type="button" id="fontPlus">문자+</button>
+    <button type="button" id="DarkToggle">다크모드</button>
+
+
 </form>
 
-<script>
-document.getElementById("grammarBtn").addEventListener("click", function () {
-    const text = document.getElementById("editor").value;
+<!-- 문법 오류 출력 영역 -->
+<div id="statusBar">
+    <span id="checkStatus">대기 중</span>
+    <span id="lastChecked"></span>
+</div>
 
+<div id="errorBox">
+    <h3>문법 검사 결과</h3>
+    <div id="errorList">아직 검사하지 않았습니다.</div>
+</div>
+
+
+<script>
+const editor = document.getElementById("editor");
+const grammarBtn = document.getElementById("grammarBtn");
+const checkStatus = document.getElementById("checkStatus");
+const lastChecked = document.getElementById("lastChecked");
+
+// ------- 문법 체크 -------
+grammarBtn.addEventListener("click", function () {
+    const text = editor.value;
+
+    // 검사 시작
+    checkStatus.textContent = "검사 중...";
+    checkStatus.className = "loading";
+    grammarBtn.disabled = true;
+    
     fetch("/check", {
         method: "POST",
         headers: {
@@ -58,13 +177,77 @@ document.getElementById("grammarBtn").addEventListener("click", function () {
             alert("서버 오류: " + data.error);
             return;
         }
-        // 문법 교정된 텍스트를 textarea에 적용
+        // 1️ 교정된 텍스트 적용
         document.getElementById("editor").value = data.corrected;
+
+        // 2️ 오류 메시지 표시
+        const errorList = document.getElementById("errorList");
+        errorList.innerHTML = "";
+
+        if (!data.errors || data.errors.length === 0) {
+            const div = document.createElement("div");
+            div.className = "no-error";
+            div.textContent = "문법 오류가 없습니다.";
+            errorList.appendChild(div);
+        }
+        else  {
+            data.errors.forEach(err => {
+                const div = document.createElement("div");
+                div.className = "error-item";
+                div.textContent = err.message;
+                div.addEventListener("click", () => {
+                    setActiveError(div);
+                    moveCursor(err.offset, err.length);
+                });
+                errorList.appendChild(div);
+            });
+        }
+        // 검사 완료
+        checkStatus.textContent = "검사 완료";
+        checkStatus.className = "done";
+        const now = new Date();
+        lastChecked.textContent =
+            ` (마지막 검사: ${now.toLocaleTimeString()})`;
     })
     .catch(err => {
+        checkStatus.textContent = "검사 실패";
+        checkStatus.className = "";
         alert("요청 실패: " + err);
+    })
+    .finally(() => {
+        grammarBtn.disabled = false;
     });
 });
+
+// ------ 에러 커서 이동 ------
+function moveCursor(offset, length) {
+    editor.focus();
+    editor.setSelectionRange(offset, offset + length);
+}
+function setActiveError(el) {
+    document.querySelectorAll(".error-item")
+        .forEach(e => e.classList.remove("active"));
+    el.classList.add("active");
+}
+
+// ------ 폰트 --------
+let fontSize = parseInt(window.getComputedStyle(editor).fontSize); // 현재 폰트 사이즈 가져오기
+
+document.getElementById("fontPlus").addEventListener("click", () => {
+    fontSize = Math.min(36, fontSize + 2);
+    editor.style.fontSize = fontSize + "px";
+});
+
+document.getElementById("fontMinus").addEventListener("click", () => {
+    fontSize = Math.max(10, fontSize - 2); // 최소 10px
+    editor.style.fontSize = fontSize + "px";
+});
+
+// ----- 다크 모드 -------
+document.getElementById("DarkToggle").addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+});
+
 </script>
 
 </body>

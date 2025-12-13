@@ -4,8 +4,6 @@ from flask import Flask, render_template, request, jsonify, send_file
 from Grammar.GrammarManager import GrammarManager
 from docx import Document
 from dotenv import load_dotenv
-import tempfile
-import os
 app = Flask(__name__) 
 
 # GrammarManager 인스턴스 생성 
@@ -35,16 +33,16 @@ def editor():
 def check():
     try:
         data = request.json
-        text = data.get("text", "")
-        level = data.get("level", "basic")
-        lang = data.get("lang", "kr")
         
         if "text" not in data:
             return jsonify({"error": "no text field"})
     
-        corrected = grammar.check(data["text"])
-        print(corrected)
-        return jsonify({"corrected": corrected})
+        corrected, errors = grammar.check(data["text"])
+                
+        return jsonify({
+            "corrected": corrected,
+            "errors": errors
+        })
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500

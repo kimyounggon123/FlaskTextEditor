@@ -4,12 +4,52 @@ from langdetect import detect
 from openai import OpenAI
 
 
-    
+class LanguageDetector:
+    def __init__(self):
+        pass
+    def detect(self, text):
+        try:
+            return detect(text)
+        except:
+            return "unknown"
+        
 # ------------------- 문법 교정 파트 ---------------------
 class GrammarManager:
     def __init__(self, type: str = 'en-US'):
         self.tool = language_tool_python.LanguageTool(type)
+        self.RULE_KR = {
+            # 문장 시작 / 대소문자
+            "UPPERCASE_SENTENCE_START": "문장은 대문자로 시작해야 합니다.",
+            "LOWERCASE_SENTENCE_START": "문장은 소문자로 시작해야 합니다.",
 
+            # 관사
+            "EN_A_VS_AN": "a / an 사용이 잘못되었습니다.",
+            "EN_MISSING_ARTICLE": "관사가 빠졌습니다.",
+            "EN_UNNECESSARY_ARTICLE": "불필요한 관사가 사용되었습니다.",
+
+            # 주어-동사 / 시제
+            "EN_VERB_AGREEMENT": "주어와 동사의 수가 맞지 않습니다.",
+            "EN_SIMPLE_PRESENT": "현재형 동사 형태가 잘못되었습니다.",
+            "EN_SIMPLE_PAST": "과거형 동사 사용이 잘못되었습니다.",
+            "EN_TENSE_CONSISTENCY": "시제가 문맥과 일치하지 않습니다.",
+
+            # 명사 / 품사
+            "EN_NOUN_NUMBER": "단수/복수 명사 형태가 잘못되었습니다.",
+            "EN_POSSESSIVE": "소유격 사용이 잘못되었습니다.",
+            "EN_ADJECTIVE_ADVERB": "형용사 또는 부사 사용이 잘못되었습니다.",
+
+            # 반복 / 부정
+            "EN_REDUNDANCY_REPETITION": "불필요한 표현이 반복되었습니다.",
+            "EN_DOUBLE_NEGATION": "이중 부정이 사용되었습니다.",
+
+            # 철자
+            "MORFOLOGIK_RULE_EN_US": "철자가 잘못되었습니다.",
+            "ENGLISH_WORD_REPEAT_RULE": "같은 단어가 반복되었습니다.",
+
+            # 문장부호
+            "DOUBLE_PUNCTUATION": "문장 부호가 중복되었습니다.",
+            "SPACE_BEFORE_PUNCTUATION": "문장 부호 앞에 공백이 있습니다."
+        }
 
     def check(self, text):
         matches = self.tool.check(text)
@@ -19,13 +59,12 @@ class GrammarManager:
         for m in matches:
             errors.append({
                 "rule": m.rule_id,
-                "message": m.message,
+                "message": self.RULE_KR.get(m.rule_id, m.message),
                 "suggestions": m.replacements,
                 "offset": m.offset,
                 "length": m.error_length,
                 "context": m.context
-                }
-            )
+            })
 
         return corrected, errors
 
