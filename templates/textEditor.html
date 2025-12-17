@@ -48,6 +48,7 @@
             color: red;
             cursor: pointer;
         }
+
         .error-item.active {
             background: rgba(255, 0, 0, 0.15);
             border-left: 4px solid red;
@@ -296,11 +297,23 @@ function CheckGrammar()
             data.errors.forEach(err => {
                 const div = document.createElement("div");
                 div.className = "error-item";
-                div.textContent = err.message;
+
+                div.innerHTML = `
+                    <span class="error-msg">${err.message}</span>
+                    <span class="error-diff">
+                        <span class="open">(</span>
+                        <span class="origin">${err.original}</span>
+                        <span class="arrow"> → </span>
+                        <span class="correct">${err.correct}</span>
+                        <span class="close">)</span>
+                    </span>
+                `;
+
                 div.addEventListener("click", () => {
                     setActiveError(div);
                     moveCursor(err.offset, err.length);
                 });
+
                 errorList.appendChild(div);
             });
         }

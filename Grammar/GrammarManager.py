@@ -53,17 +53,20 @@ class GrammarManager:
 
     def check(self, text):
         matches = self.tool.check(text)
+
         corrected = language_tool_python.utils.correct(text, matches)
 
-        errors = [] # 틀린 이유 수집
+        errors = []
         for m in matches:
+            original = text[m.offset : m.offset + m.error_length]
+            suggestion = m.replacements[0] if m.replacements else ""
+
             errors.append({
-                "rule": m.rule_id,
                 "message": self.RULE_KR.get(m.rule_id, m.message),
-                "suggestions": m.replacements,
+                "original": original,
+                "correct": suggestion,
                 "offset": m.offset,
-                "length": m.error_length,
-                "context": m.context
+                "length": m.error_length
             })
 
         return corrected, errors
