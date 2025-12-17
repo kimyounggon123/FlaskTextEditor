@@ -170,7 +170,7 @@
 
 <h2>Text Editor with Grammar checker</h2>
 
-<!-- Font Style accordion -->
+<!-- 폰트 스타일 아코디언 UI 파트 -->
 <div class="accordion">
     <div class="accordion-header" onclick="toggleAccordion()">
         <span>
@@ -190,16 +190,14 @@
     <textarea id="editor" name="editor">{{ content }}</textarea>
     <br>
 
-    <!-- 저장 버튼 (기존 form-submit 유지) -->
-    <button type="submit" name="action" value="save">저장</button>
+        <!-- 저장 버튼 -->
+    <button type="button" id="save">저장</button>
 
     <!-- 문법 검사 버튼 (Ajax로 변경해 json 스타일로 전송) -->
     <button type="button" id="grammarBtn">문법 검사</button>
     <button type="button" id="fontMinus">문자-</button>
     <button type="button" id="fontPlus">문자+</button>
     <button type="button" id="DarkToggle">다크모드</button>
-
-
 </form>
 
 <!-- 문법 오류 출력 영역 -->
@@ -218,11 +216,44 @@
 <script>
 const editor = document.getElementById("editor");
 const grammarBtn = document.getElementById("grammarBtn");
+const saveBtn = document.getElementById("save");
 const checkStatus = document.getElementById("checkStatus");
 const lastChecked = document.getElementById("lastChecked");
 
+// -- 파일 형태로 저장 
+function SaveToFile()
+{
+    const text = editor.value;
+
+     fetch("/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("다운로드 실패");
+        return res.blob();
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "grammar_checked.docx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(err => {
+        alert(err.message);
+    });
+}
+saveBtn.addEventListener("click", SaveToFile);
+
+
 // ------- 문법 체크 -------
-grammarBtn.addEventListener("click", function () {
+function CheckGrammar()
+{
     const text = editor.value;
 
     // 검사 시작
@@ -230,6 +261,7 @@ grammarBtn.addEventListener("click", function () {
     checkStatus.className = "loading";
     grammarBtn.disabled = true;
     
+    // json 형태로 fetch
     fetch("/check", {
         method: "POST",
         headers: {
@@ -287,7 +319,8 @@ grammarBtn.addEventListener("click", function () {
     .finally(() => {
         grammarBtn.disabled = false;
     });
-});
+}
+grammarBtn.addEventListener("click", CheckGrammar);
 
 // ------ 에러 커서 이동 ------
 function moveCursor(offset, length) {
@@ -314,6 +347,7 @@ document.getElementById("fontMinus").addEventListener("click", () => {
 });
 
 
+// ------ 아코디언 UI 함수 --------
 function toggleAccordion() {
     const list = document.getElementById("fontList");
     if (list.style.display === "block") {
@@ -338,6 +372,7 @@ function setFont(name, fontFamily) {
     label.textContent = name;
     closeAccordion();
 }
+
 // ----- 다크 모드 -------
 document.getElementById("DarkToggle").addEventListener("click", () => {
     document.body.classList.toggle("dark");
