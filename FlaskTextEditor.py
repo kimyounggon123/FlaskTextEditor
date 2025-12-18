@@ -32,7 +32,7 @@ def check():
             return jsonify({"error": "no text field"})
     
         corrected, errors = grammar.check(data["text"])
-                
+        print(errors)
         return jsonify({
             "corrected": corrected,
             "errors": errors

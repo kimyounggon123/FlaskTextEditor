@@ -28,6 +28,9 @@ class GrammarManager:
             "EN_UNNECESSARY_ARTICLE": "불필요한 관사가 사용되었습니다.",
 
             # 주어-동사 / 시제
+            "SINGULAR_AGREEMENT_SENT_START": "주어와 동사의 수가 맞지 않습니다.",
+            "PERS_PRONOUN_AGREEMENT": "주어(인칭 대명사)와 동사가 일치하지 않습니다.",
+            
             "EN_VERB_AGREEMENT": "주어와 동사의 수가 맞지 않습니다.",
             "EN_SIMPLE_PRESENT": "현재형 동사 형태가 잘못되었습니다.",
             "EN_SIMPLE_PAST": "과거형 동사 사용이 잘못되었습니다.",
@@ -62,6 +65,7 @@ class GrammarManager:
             suggestion = m.replacements[0] if m.replacements else ""
 
             errors.append({
+                "code": m.rule_id,
                 "message": self.RULE_KR.get(m.rule_id, m.message),
                 "original": original,
                 "correct": suggestion,
